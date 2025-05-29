@@ -1,5 +1,6 @@
 import streamlit as st
 import openai
+import os
 
 # Set Streamlit page configuration
 st.set_page_config(page_title="Prompt Enhancer", layout="centered")
@@ -20,27 +21,27 @@ if submit:
     if not all([role, context, task, api_key]):
         st.error("Please fill in all fields.")
     else:
-        openai.api_key = api_key
-
-        # Construct the enhancement instruction
-        instruction = f"""
-        You are an assistant that improves prompts for ChatGPT.
-        Given the following inputs, create a well-structured prompt that includes:
-        - A clear role for GPT to assume.
-        - Relevant context.
-        - A defined task.
-        - An instruction to clarify assumptions before answering.
-        - A suggestion on how the answer should be formatted (e.g., bullet points, code blocks, tables).
-
-        Role: {role}
-        Context: {context}
-        Task: {task}
-
-        Provide only the enhanced prompt.
-        """
-
         try:
-            response = openai.ChatCompletion.create(
+            client = openai.OpenAI(api_key=api_key)
+
+            # Construct the enhancement instruction
+            instruction = f"""
+            You are an assistant that improves prompts for ChatGPT.
+            Given the following inputs, create a well-structured prompt that includes:
+            - A clear role for GPT to assume.
+            - Relevant context.
+            - A defined task.
+            - An instruction to clarify assumptions before answering.
+            - A suggestion on how the answer should be formatted (e.g., bullet points, code blocks, tables).
+
+            Role: {role}
+            Context: {context}
+            Task: {task}
+
+            Provide only the enhanced prompt.
+            """
+
+            response = client.chat.completions.create(
                 model="gpt-4",
                 messages=[
                     {"role": "user", "content": instruction}
@@ -48,7 +49,7 @@ if submit:
                 temperature=0.7,
                 max_tokens=500
             )
-            enhanced_prompt = response["choices"][0]["message"]["content"].strip()
+            enhanced_prompt = response.choices[0].message.content.strip()
             st.subheader("✨ Enhanced Prompt")
             st.code(enhanced_prompt)
         except Exception as e:
